@@ -5,29 +5,19 @@ import requests
 # Custom CSS and animations
 st.markdown("""
     <style>
-        /* Styling for Title */
         p {
             color: #000;
             font-size: 40px;
             text-align: center;
             font-family: 'Arial', sans-serif;
         }
-        
-        /* Animations for Recommended Exercises */
         .fade-in {
             animation: fadeIn 2s ease-in;
         }
-
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
-
-        /* Styling for the button */
         .stButton>button {
             background-color: #4CAF50;
             color: white;
@@ -38,14 +28,13 @@ st.markdown("""
             cursor: pointer;
             border-radius: 8px;
         }
-
         .stButton>button:hover {
             background-color: #45a049;
         }
     </style>
 """, unsafe_allow_html=True)
 
-# 🔎 Step 1: Get exercise ID from name using WGER API
+# 🔎 Get exercise ID (not used in recommend function right now, kept for future use)
 def get_exercise_id_from_name(name):
     url = f"https://wger.de/api/v2/exercise/?language=2&limit=500&name={name}"
     try:
@@ -60,11 +49,27 @@ def get_exercise_id_from_name(name):
         print(f"Error fetching ID for name '{name}': {e}")
         return None
 
-# 🤝 Recommendation logic
-def recommend(exercise, gym_list_df, similarity):
-    gym_index = gym_list_df[gym_list_df["Title"] == exercise].index[0]
-    distance = similarity[gym_index]
-    gym_list_sorted = sorted(list(enumerate(distance)), key=lambda x: x[1], reverse=True)[1:6]
+# 🤝 Recommendation logic (SAFE)
+def recommend(exercise, gym_list_df, distance):
+    matches = gym_list_df[gym_list_df["Title"] == exercise]
+    
+    if matches.empty:
+        st.error(f"Exercise '{exercise}' not found in the dataset.")
+        return []
+
+    gym_index = matches.index[0]
+
+    if gym_index >= len(distance):
+        st.error("Exercise index is out of bounds for the similarity matrix.")
+        return []
+
+    distance_row = distance[gym_index]
+
+    if len(distance_row) != len(gym_list_df):
+        st.error("Similarity matrix and dataset size mismatch.")
+        return []
+
+    gym_list_sorted = sorted(list(enumerate(distance_row)), key=lambda x: x[1], reverse=True)[1:6]
 
     recommended = []
     for i in gym_list_sorted:
@@ -72,22 +77,28 @@ def recommend(exercise, gym_list_df, similarity):
         recommended.append(title)
     return recommended
 
-with open("gym.pkl", "rb") as f:
-    gym_list_df = pickle.load(f)
+# 📦 Load data
+try:
+    with open("gym.pkl", "rb") as f:
+        gym_list_df = pickle.load(f)
 
-with open("similarity.pkl", "rb") as f1:
-    similarity = pickle.load(f1)
+    with open("similarity.pkl", "rb") as f1:
+        similarity = pickle.load(f1)
+except Exception as e:
+    st.error(f"Error loading data files: {e}")
+    st.stop()
 
+# 🧾 List of gym titles
 gym_list = gym_list_df["Title"]
 
-# 🚀 Streamlit App
-st.title(" Workout Recommendation System")
+# 🚀 Streamlit App UI
+st.title("Workout Recommendation System")
 
 option = st.selectbox("Choose an exercise", gym_list)
 
 if st.button("Recommend"):
     recommended_gyms = recommend(option, gym_list_df, similarity)
-    st.write("Recommended Exercises:")
-
-    for exercise in recommended_gyms:
-        st.markdown(f'<p class="fade-in">{exercise}</p>', unsafe_allow_html=True)
+    if recommended_gyms:
+        st.write("Recommended Exercises:")
+        for exercise in recommended_gyms:
+            st.markdown(f'<p class="fade-in">{exercise}</p>', unsafe_allow_html=True)
