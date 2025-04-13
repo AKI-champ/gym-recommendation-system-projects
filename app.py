@@ -81,7 +81,7 @@ with open("similarity.pkl", "rb") as f1:
 gym_list = gym_list_df["Title"]
 
 # 🚀 Streamlit App
-st.title(" GYM Recommendation System")
+st.title(" Workout Recommendation System")
 
 option = st.selectbox("Choose an exercise", gym_list)
 
