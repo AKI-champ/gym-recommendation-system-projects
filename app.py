@@ -34,7 +34,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 🔎 Get exercise ID (not used in recommend function right now, kept for future use)
+
 def get_exercise_id_from_name(name):
     url = f"https://wger.de/api/v2/exercise/?language=2&limit=500&name={name}"
     try:
@@ -49,7 +49,7 @@ def get_exercise_id_from_name(name):
         print(f"Error fetching ID for name '{name}': {e}")
         return None
 
-# 🤝 Recommendation logic (SAFE)
+
 def recommend(exercise, gym_list_df, distance):
     matches = gym_list_df[gym_list_df["Title"] == exercise]
     
@@ -77,7 +77,7 @@ def recommend(exercise, gym_list_df, distance):
         recommended.append(title)
     return recommended
 
-# 📦 Load data
+
 try:
     with open("gym.pkl", "rb") as f:
         gym_list_df = pickle.load(f)
@@ -88,10 +88,10 @@ except Exception as e:
     st.error(f"Error loading data files: {e}")
     st.stop()
 
-# 🧾 List of gym titles
+
 gym_list = gym_list_df["Title"]
 
-# 🚀 Streamlit App UI
+
 st.title("Workout Recommendation System")
 
 option = st.selectbox("Choose an exercise", gym_list)
